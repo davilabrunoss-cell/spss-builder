@@ -205,12 +205,12 @@ def generate_next_var(doc: QuestionnaireDocument) -> str:
 
 def make_new_block(doc: QuestionnaireDocument) -> QuestionBlock:
     return QuestionBlock(
-        label="Nova questão",
+        label="Nova questao",
         var=generate_next_var(doc),
         tipo="ru",
         options=[
-            QuestionOption(code="1", label="Opção 1"),
-            QuestionOption(code="2", label="Opção 2"),
+            QuestionOption(code="1", label="Opcao 1"),
+            QuestionOption(code="2", label="Opcao 2"),
         ],
     )
 
