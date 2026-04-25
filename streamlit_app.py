@@ -12,6 +12,7 @@ APP_DIR = Path(__file__).resolve().parent
 PROJECT_DIR = APP_DIR.parent
 LOGO_PATH = APP_DIR / "assets" / "Logo_Agora.png"
 PARSER_SCRIPTS_DIR = APP_DIR / "scripts"
+GPT_NORMALIZER_URL = "https://chatgpt.com/g/g-69e85b6c3d948191989f3312e8a95094-normalizador-spss-ipesquisa"
 
 if str(APP_DIR) not in sys.path:
     sys.path.insert(0, str(APP_DIR))
@@ -214,7 +215,8 @@ def inject_css() -> None:
             }
             div[data-testid="stDownloadButton"] button,
             div[data-testid="stButton"] button,
-            div[data-testid="stFormSubmitButton"] button {
+            div[data-testid="stFormSubmitButton"] button,
+            div[data-testid="stLinkButton"] a {
                 border-radius: 12px !important;
                 font-weight: 600 !important;
                 color: #ffffff !important;
@@ -224,7 +226,8 @@ def inject_css() -> None:
             }
             div[data-testid="stDownloadButton"] button:hover,
             div[data-testid="stButton"] button:hover,
-            div[data-testid="stFormSubmitButton"] button:hover {
+            div[data-testid="stFormSubmitButton"] button:hover,
+            div[data-testid="stLinkButton"] a:hover {
                 background: #ffffff !important;
                 color: #23242d !important;
                 border: 1px solid rgba(35, 36, 45, 0.65) !important;
@@ -253,10 +256,22 @@ def inject_css() -> None:
                 background: #23242d !important;
                 border: 1px solid rgba(35, 36, 45, 0.75) !important;
             }
+            div[data-testid="stLinkButton"] a {
+                display: inline-flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+                text-decoration: none !important;
+                min-height: 2.45rem !important;
+                padding: 0.28rem 0.48rem !important;
+                font-size: 0.76rem !important;
+                width: 100% !important;
+            }
             [data-testid="stFileUploaderDropzone"] {
                 background: rgba(255,255,255,0.86) !important;
                 border: 1px dashed rgba(233, 84, 32, 0.26) !important;
                 border-radius: 14px !important;
+                padding: 0.35rem 0.45rem !important;
+                min-height: 4.25rem !important;
             }
             [data-testid="stFileUploaderDropzone"] * {
                 color: #7a5a50 !important;
@@ -425,7 +440,7 @@ def load_text_into_state(text: str, source_name: str) -> None:
 
 
 def top_header() -> None:
-    left, right = st.columns([2.15, 1.1], vertical_alignment="center")
+    left, middle, right = st.columns([2.08, 0.17, 1.04], vertical_alignment="center")
     with left:
         brand_logo, brand_divider, brand_text = st.columns([1.05, 0.06, 2.15], vertical_alignment="center")
         with brand_logo:
@@ -445,6 +460,15 @@ def top_header() -> None:
                 """,
                 unsafe_allow_html=True,
             )
+
+    with middle:
+        st.markdown("<div style='height:1.78rem'></div>", unsafe_allow_html=True)
+        st.link_button(
+            "GPT",
+            GPT_NORMALIZER_URL,
+            use_container_width=True,
+            help="Abrir GPT Normalizer no navegador.",
+        )
 
     with right:
         if st.session_state.loaded_once:
@@ -483,10 +507,7 @@ def top_header() -> None:
                     except Exception as exc:
                         st.error(f"Não foi possível ler o arquivo enviado: {type(exc).__name__}: {exc}")
         else:
-            st.markdown(
-                '<p class="agora-file-placeholder">Carregue um TXT técnico para começar a editar e validar.</p>',
-                unsafe_allow_html=True,
-            )
+            st.markdown("<div style='margin-top:0.72rem'></div>", unsafe_allow_html=True)
             uploaded = st.file_uploader(
                 "Carregar TXT técnico",
                 type=["txt"],
@@ -974,7 +995,6 @@ def render_app() -> None:
     top_header()
 
     if not st.session_state.loaded_once:
-        st.info("Carregue um TXT técnico para começar a editar e validar o questionário.")
         return
 
     render_summary_metrics()
