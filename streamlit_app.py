@@ -448,6 +448,14 @@ def load_text_into_state(text: str, source_name: str) -> None:
     clear_validation()
 
 
+def load_pasted_text_into_state(text: str) -> None:
+    clean_text = text.strip()
+    if not clean_text:
+        return
+    load_text_into_state(clean_text, "TXT colado.txt")
+    st.session_state.uploaded_signature = hashlib.md5(clean_text.encode("utf-8")).hexdigest()
+
+
 def top_header() -> None:
     left, middle, right = st.columns([2.08, 0.17, 1.04], vertical_alignment="center")
     with left:
@@ -1004,6 +1012,25 @@ def render_app() -> None:
     top_header()
 
     if not st.session_state.loaded_once:
+        paste_left, _ = st.columns([1.35, 1], vertical_alignment="top")
+        with paste_left:
+            with st.expander("Colar TXT técnico", expanded=False):
+                pasted_txt = st.text_area(
+                    "Cole aqui o TXT técnico gerado pelo GPT",
+                    key="pasted_txt_top",
+                    height=210,
+                    label_visibility="collapsed",
+                    placeholder="#QUESTIONARIO: Nome do questionario\n#VERSAO: 1\n#OBS: Normalizado para spss-questionnaire-builder-v2.\n\n#LABEL: 1. Texto da pergunta.#\n#VAR: VAR00001\n#TIPO: ru\n#OPCOES:\n1 | Sim\n2 | Nao\n#FIM",
+                )
+                if st.button("Carregar TXT colado", use_container_width=True, key="load_pasted_txt_top"):
+                    if pasted_txt.strip():
+                        try:
+                            load_pasted_text_into_state(pasted_txt)
+                            st.rerun()
+                        except Exception as exc:
+                            st.error(f"Não foi possível carregar o TXT colado: {type(exc).__name__}: {exc}")
+                    else:
+                        st.warning("Cole um TXT técnico antes de carregar.")
         return
 
     render_summary_metrics()
