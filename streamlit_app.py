@@ -516,7 +516,7 @@ def top_header() -> None:
                     except Exception as exc:
                         st.error(f"Não foi possível ler o arquivo enviado: {type(exc).__name__}: {exc}")
         else:
-            st.markdown("<div style='margin-top:1.46rem'></div>", unsafe_allow_html=True)
+            st.markdown("<div style='margin-top:2.60rem'></div>", unsafe_allow_html=True)
             uploaded = st.file_uploader(
                 "Carregar TXT técnico",
                 type=["txt"],
