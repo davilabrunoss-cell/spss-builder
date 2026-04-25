@@ -272,17 +272,24 @@ def build_sav(schema: dict[str, Any], output_base: Path, rm_mode: str) -> tuple[
 
 
 def readback_sav(sav_path: Path) -> list[dict[str, Any]]:
-    try:
-        pyreadstat.read_sav(str(sav_path), metadataonly=True)
-        return []
-    except Exception as exc:  # pragma: no cover - defensive path
-        return [
-            make_error(
-                "sav_readback",
-                "sav_readback_failed",
-                f"Falha ao reler o .sav gerado: {type(exc).__name__}: {exc}",
-            )
-        ]
+    attempts: list[str] = []
+    for encoding in (None, "WINDOWS-1252", "CP1252", "LATIN1"):
+        try:
+            kwargs = {"metadataonly": True}
+            if encoding is not None:
+                kwargs["encoding"] = encoding
+            pyreadstat.read_sav(str(sav_path), **kwargs)
+            return []
+        except Exception as exc:  # pragma: no cover - defensive path
+            label = encoding or "default"
+            attempts.append(f"{label}: {type(exc).__name__}: {exc}")
+    return [
+        make_error(
+            "sav_readback",
+            "sav_readback_failed",
+            "Falha ao reler o .sav gerado. Tentativas: " + " | ".join(attempts),
+        )
+    ]
 
 
 def default_output_base(input_path: Path) -> Path:
