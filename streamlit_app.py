@@ -907,6 +907,11 @@ def render_validation_panel() -> None:
     status = result.get("status")
     if status == "apto":
         st.markdown('<p class="agora-status-ok">Status: apto tecnicamente para gerar e baixar o .sav.</p>', unsafe_allow_html=True)
+        if result.get("fallback_mode"):
+            st.info(
+                f"Geração online concluída com fallback de RM: `{result['fallback_mode']}`. "
+                "O modo MRSETS falhou neste ambiente hospedado para este questionário."
+            )
         art = result.get("artifacts", {})
         st.write(f"Schema: `{art.get('schema_path', '')}`")
         st.write(f"SAV: `{art.get('sav_path', '')}`")
@@ -921,11 +926,28 @@ def render_validation_panel() -> None:
     st.markdown("</div>", unsafe_allow_html=True)
 
 
+def _should_retry_with_slots(result: dict) -> bool:
+    for error in result.get("errors", []):
+        if error.get("code") != "sav_build_failed":
+            continue
+        message = error.get("message", "")
+        if "UnicodeDecodeError" in message:
+            return True
+    return False
+
+
 def run_validation() -> None:
     run_dir = make_runtime_dir()
     base_name = st.session_state.document.questionario or "questionario"
     txt_path, output_base = write_runtime_input(st.session_state.document, run_dir, base_name)
     result = run_sanity_check(txt_path, output_base, "mrsets")
+    if result.get("status") != "apto" and _should_retry_with_slots(result):
+        slots_output_base = output_base.with_name(output_base.name + "_slots")
+        slots_result = run_sanity_check(txt_path, slots_output_base, "slots")
+        if slots_result.get("status") == "apto":
+            slots_result["fallback_mode"] = "slots"
+            slots_result["fallback_reason"] = "mrsets_unicode_decode_error"
+            result = slots_result
     st.session_state.validation_result = result
     st.session_state.current_txt = txt_path.read_text(encoding="utf-8")
 
