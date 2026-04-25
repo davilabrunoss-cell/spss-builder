@@ -456,6 +456,25 @@ def load_pasted_text_into_state(text: str) -> None:
     st.session_state.uploaded_signature = hashlib.md5(clean_text.encode("utf-8")).hexdigest()
 
 
+def create_manual_document_into_state() -> None:
+    doc = QuestionnaireDocument(
+        questionario="Novo Questionario",
+        versao="1",
+        obs="Criado manualmente no Agora SPSS Builder.",
+        blocks=[],
+    )
+    append_new_block(doc)
+    st.session_state.document = doc
+    st.session_state.source_name = "questionario criado manualmente"
+    st.session_state.current_txt = serialize_document(doc)
+    st.session_state.txt_name = "Novo Questionario.txt"
+    st.session_state.dirty = True
+    st.session_state.loaded_once = True
+    st.session_state.show_replace_uploader = False
+    st.session_state.uploaded_signature = ""
+    clear_validation()
+
+
 def top_header() -> None:
     left, middle, right = st.columns([2.08, 0.17, 1.04], vertical_alignment="center")
     with left:
@@ -1031,6 +1050,9 @@ def render_app() -> None:
                             st.error(f"Não foi possível carregar o TXT colado: {type(exc).__name__}: {exc}")
                     else:
                         st.warning("Cole um TXT técnico antes de carregar.")
+            if st.button("Criar questionário manualmente", use_container_width=True, key="create_manual_questionnaire_top"):
+                create_manual_document_into_state()
+                st.rerun()
         return
 
     render_summary_metrics()
