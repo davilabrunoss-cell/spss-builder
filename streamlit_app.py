@@ -273,6 +273,15 @@ def inject_css() -> None:
                 padding: 0.35rem 0.45rem !important;
                 min-height: 4.25rem !important;
             }
+            [data-testid="stFileUploaderDropzone"] > div {
+                min-height: 3.4rem !important;
+                display: flex !important;
+                align-items: center !important;
+            }
+            [data-testid="stFileUploaderDropzone"] section {
+                margin: 0 !important;
+                width: 100% !important;
+            }
             [data-testid="stFileUploaderDropzone"] * {
                 color: #7a5a50 !important;
             }
