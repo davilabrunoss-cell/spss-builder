@@ -397,7 +397,7 @@ def write_sav_with_mrsets(schema: dict[str, Any], output_path: Path) -> None:
     mult_resp_defs: dict[bytes, dict[bytes, Any]] = {}
 
     def b(value: str) -> bytes:
-        return value.encode("cp1252", errors="replace")
+        return value.encode("utf-8", errors="replace")
 
     for var in schema["variables"]:
         if var["logical_type"] == "rm":
@@ -436,6 +436,7 @@ def write_sav_with_mrsets(schema: dict[str, Any], output_path: Path) -> None:
         multRespDefs=mult_resp_defs or None,
         fileLabel=b"Questionario iPesquisa V2",
         overwrite=True,
+        ioUtf8=1,
     ) as writer:
         pass
 
