@@ -1033,7 +1033,7 @@ def render_app() -> None:
     if not st.session_state.loaded_once:
         paste_left, _ = st.columns([1.35, 1], vertical_alignment="top")
         with paste_left:
-            with st.expander("Colar TXT técnico", expanded=False):
+            with st.expander("Cole o TXT gerado pelo GPT", expanded=False):
                 pasted_txt = st.text_area(
                     "Cole aqui o TXT técnico gerado pelo GPT",
                     key="pasted_txt_top",
