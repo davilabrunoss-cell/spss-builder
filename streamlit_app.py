@@ -825,6 +825,37 @@ def normalize_options_df(df: pd.DataFrame) -> list[QuestionOption]:
     return options
 
 
+def resolve_error_label(error: dict, doc: QuestionnaireDocument, txt_payload: str) -> str:
+    error_var = (error.get("var") or "").strip().upper()
+    if error_var:
+        for block in doc.blocks:
+            if (block.var or "").strip().upper() == error_var and block.label:
+                return block.label.strip()
+
+    line_number = error.get("line")
+    if not line_number:
+        return ""
+
+    lines = txt_payload.splitlines()
+    if not lines:
+        return ""
+
+    index = min(max(int(line_number) - 1, 0), len(lines) - 1)
+    while index >= 0:
+        candidate = lines[index].strip()
+        if candidate.startswith("#LABEL:"):
+            return candidate.split(":", 1)[1].strip().rstrip("#").strip()
+        index -= 1
+    return ""
+
+
+def format_validation_error(error: dict, doc: QuestionnaireDocument, txt_payload: str) -> str:
+    location = error.get("var") or (f"linha {error.get('line')}" if error.get("line") else "bloco")
+    label = resolve_error_label(error, doc, txt_payload)
+    suffix = f" - {label}" if label else ""
+    return f"[{error.get('code')}] {error.get('message')} ({location}){suffix}"
+
+
 def render_editor() -> None:
     st.markdown('<p class="agora-workflow-title">Editor visual do questionário</p>', unsafe_allow_html=True)
     st.caption("Clique para expandir uma pergunta, editar o bloco e salvar localmente no documento base.")
@@ -1024,9 +1055,9 @@ def render_validation_panel() -> None:
         st.markdown('<p class="agora-status-blocked">Status: bloqueado por erro estrutural.</p>', unsafe_allow_html=True)
 
     st.write(f"Erros encontrados: **{result.get('error_count', 0)}**")
+    txt_payload = st.session_state.current_txt or serialize_document(st.session_state.document)
     for error in result.get("errors", []):
-        location = error.get("var") or f"linha {error.get('line')}" if error.get("line") else "bloco"
-        st.error(f"[{error.get('code')}] {error.get('message')} ({location})")
+        st.error(format_validation_error(error, st.session_state.document, txt_payload))
 
     st.markdown("</div>", unsafe_allow_html=True)
 
