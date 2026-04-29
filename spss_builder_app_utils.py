@@ -203,6 +203,23 @@ def generate_next_var(doc: QuestionnaireDocument) -> str:
     return f"VAR{max_number + 1:05d}"
 
 
+def validate_block_var(doc: QuestionnaireDocument, index: int) -> tuple[bool, str]:
+    pattern = re.compile(r"^VAR(\d{5})$")
+    current = (doc.blocks[index].var or "").strip().upper() if 0 <= index < len(doc.blocks) else ""
+
+    if not current:
+        return False, "VAR vazia."
+    if not pattern.match(current):
+        return False, "VAR fora do padrao VAR00001."
+
+    for other_index, other_block in enumerate(doc.blocks):
+        if other_index == index:
+            continue
+        if (other_block.var or "").strip().upper() == current:
+            return False, "VAR duplicada no documento."
+    return True, ""
+
+
 def make_new_block(doc: QuestionnaireDocument) -> QuestionBlock:
     return QuestionBlock(
         label="Nova questao",

@@ -27,10 +27,12 @@ from spss_builder_app_utils import (  # noqa: E402
     blocks_to_json,
     delete_block,
     document_summary,
+    generate_next_var,
     label_bytes,
     load_document_from_text,
     make_runtime_dir,
     serialize_document,
+    validate_block_var,
     write_runtime_input,
 )
 from spss_sanity_check import run_sanity_check  # noqa: E402
@@ -831,7 +833,17 @@ def render_editor() -> None:
                         key=f"label_{idx}",
                     )
                 with col_info:
-                    st.text_input("VAR", value=block.var, disabled=True, key=f"var_{idx}")
+                    var_ok, var_message = validate_block_var(st.session_state.document, idx)
+                    var_display_col, var_refresh_col = st.columns([4.2, 1.35], vertical_alignment="bottom")
+                    with var_display_col:
+                        st.text_input("VAR", value=block.var, disabled=True, key=f"var_{idx}")
+                    with var_refresh_col:
+                        refresh_var = st.form_submit_button("↻", use_container_width=True)
+                    if not var_ok:
+                        st.markdown(
+                            f"<div style='margin-top:0.2rem; color:#c62828; font-size:0.92rem; font-weight:600;'>⚠️ {var_message}</div>",
+                            unsafe_allow_html=True,
+                        )
                     new_tipo = st.selectbox(
                         "Tipo de pergunta",
                         type_options,
@@ -906,6 +918,19 @@ def render_editor() -> None:
                     save = st.form_submit_button("Salvar bloco", use_container_width=True)
                 with action_right:
                     delete = st.form_submit_button("Excluir questão", use_container_width=True)
+
+                if refresh_var:
+                    var_ok, _ = validate_block_var(st.session_state.document, idx)
+                    if var_ok:
+                        st.info("A VAR atual jÃ¡ estÃ¡ vÃ¡lida.")
+                    else:
+                        new_var = generate_next_var(st.session_state.document)
+                        st.session_state.document.blocks[idx].var = new_var
+                        st.session_state.current_txt = serialize_document(st.session_state.document)
+                        st.session_state.dirty = True
+                        clear_validation()
+                        st.success(f"VAR atualizada para {new_var}.")
+                    st.rerun()
 
                 if delete:
                     removed = delete_block(st.session_state.document, idx)
