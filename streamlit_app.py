@@ -27,12 +27,10 @@ from spss_builder_app_utils import (  # noqa: E402
     blocks_to_json,
     delete_block,
     document_summary,
-    generate_next_var,
     label_bytes,
     load_document_from_text,
     make_runtime_dir,
     serialize_document,
-    validate_block_var,
     write_runtime_input,
 )
 from spss_sanity_check import run_sanity_check  # noqa: E402
@@ -44,6 +42,31 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="collapsed",
 )
+
+
+def generate_next_var_local(doc: QuestionnaireDocument) -> str:
+    max_number = 0
+    for block in doc.blocks:
+        current = (block.var or "").strip().upper()
+        if current.startswith("VAR") and len(current) == 8 and current[3:].isdigit():
+            max_number = max(max_number, int(current[3:]))
+    return f"VAR{max_number + 1:05d}"
+
+
+def validate_block_var_local(doc: QuestionnaireDocument, index: int) -> tuple[bool, str]:
+    current = (doc.blocks[index].var or "").strip().upper() if 0 <= index < len(doc.blocks) else ""
+
+    if not current:
+        return False, "VAR vazia."
+    if not (current.startswith("VAR") and len(current) == 8 and current[3:].isdigit()):
+        return False, "VAR fora do padrao VAR00001."
+
+    for other_index, other_block in enumerate(doc.blocks):
+        if other_index == index:
+            continue
+        if (other_block.var or "").strip().upper() == current:
+            return False, "VAR duplicada no documento."
+    return True, ""
 
 
 def inject_css() -> None:
@@ -833,7 +856,7 @@ def render_editor() -> None:
                         key=f"label_{idx}",
                     )
                 with col_info:
-                    var_ok, var_message = validate_block_var(st.session_state.document, idx)
+                    var_ok, var_message = validate_block_var_local(st.session_state.document, idx)
                     var_display_col, var_refresh_col = st.columns([4.2, 1.35], vertical_alignment="bottom")
                     with var_display_col:
                         st.text_input("VAR", value=block.var, disabled=True, key=f"var_{idx}")
@@ -920,11 +943,11 @@ def render_editor() -> None:
                     delete = st.form_submit_button("Excluir questão", use_container_width=True)
 
                 if refresh_var:
-                    var_ok, _ = validate_block_var(st.session_state.document, idx)
+                    var_ok, _ = validate_block_var_local(st.session_state.document, idx)
                     if var_ok:
                         st.info("A VAR atual jÃ¡ estÃ¡ vÃ¡lida.")
                     else:
-                        new_var = generate_next_var(st.session_state.document)
+                        new_var = generate_next_var_local(st.session_state.document)
                         st.session_state.document.blocks[idx].var = new_var
                         st.session_state.current_txt = serialize_document(st.session_state.document)
                         st.session_state.dirty = True
